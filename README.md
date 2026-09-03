@@ -540,6 +540,8 @@ npm run typecheck
 npm run lint
 npm run test
 
+---
+
 🗺️ Roadmap
 Phase 1 — Foundation: Project architecture, application shell, responsive navigation, PWA config, IndexedDB database, migrations, theme system.
 Phase 2 — Chit Management: Create/edit/archive chit, chit configuration, monthly cycles.
@@ -550,11 +552,17 @@ Phase 6 — Reports: Monthly statement, member statement, outstanding report, au
 Phase 7 — Exports: Excel/CSV export, complete data export, backup, restore, validation.
 Phase 8 — Production Polish: Offline validation, responsive optimization, accessibility audit, performance optimization, error recovery, migration testing, PWA validation, CI/CD, production release.
 
+---
+
 🔮 Future Possibilities
 Cloud sync, multi-device support, host accounts, member portal, online payment integration, WhatsApp reminders, automated notifications, multi-branch management, advanced accounting, role-based permissions, cloud backup, native mobile applications, and audit trails. (Deliberately outside the initial local-first release).
 
+---
+
 📌 Project Status
 Chit Fund Manager is being developed as a professional local-first Progressive Web App prioritizing financial correctness, data integrity, offline reliability, backup/recovery, ease of daily use, performance, accessibility, maintainable architecture, and professional UX.
+
+---
 
 📄 License & Contributing
 License: To be determined before public release. Until explicitly added, all rights are reserved.
