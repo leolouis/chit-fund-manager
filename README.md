@@ -359,7 +359,7 @@ The architecture intentionally separates presentation, application logic, databa
 ## 🧮 Financial Calculation Engine
 
 Financial calculations are treated as business logic and should not be embedded directly inside UI components.
-
+```bash
                  User Interface
                        │
                        ▼
@@ -375,7 +375,7 @@ Financial calculations are treated as business logic and should not be embedded 
          └─────────────┼─────────────┘
                        ▼
                    Settlement
-
+```
 Important financial calculations will be independently testable. This is especially important because different chit arrangements may use different rules.
 
 ---
@@ -472,7 +472,7 @@ The local database uses versioned migrations (`Database v1 → v2 → v3 → v4`
 ---
 
 ## 📁 Project Structure
-
+```bash
 chit-fund-manager/
 │
 ├── .github/
@@ -512,7 +512,7 @@ chit-fund-manager/
 ├── tsconfig.node.json
 ├── vite.config.ts
 └── README.md
-
+```
 ---
 
 ## 🛠️ Development
