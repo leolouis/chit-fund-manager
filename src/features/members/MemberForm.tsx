@@ -1,43 +1,68 @@
 import { useEffect, useState } from "react";
 
 import { db } from "../../db/database";
-import type { Chit } from "../../types/chit";
-import type { Member } from "../../types/member";
 
 interface MemberFormProps {
+  chitId: number;
   onSaved: () => void;
   onCancel: () => void;
 }
 
 function MemberForm({
+  chitId,
   onSaved,
   onCancel,
 }: MemberFormProps) {
-  const [chits, setChits] = useState<Chit[]>([]);
+  const [memberNumber, setMemberNumber] =
+    useState("");
 
-  const [chitId, setChitId] = useState("");
-  const [memberNumber, setMemberNumber] = useState("");
   const [name, setName] = useState("");
+
   const [phone, setPhone] = useState("");
+
   const [address, setAddress] = useState("");
-  const [joiningDate, setJoiningDate] = useState("");
+
+  const [joiningDate, setJoiningDate] =
+    useState(
+      new Date()
+        .toISOString()
+        .split("T")[0],
+    );
+
   const [notes, setNotes] = useState("");
 
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    const loadChits = async () => {
-      const results = await db.chits
-        .where("status")
-        .equals("active")
-        .toArray();
+    const loadNextMemberNumber =
+      async () => {
+        const members = await db.members
+          .where("chitId")
+          .equals(chitId)
+          .toArray();
 
-      setChits(results);
-    };
+        const numbers = members
+          .map((member) =>
+            Number(member.memberNumber),
+          )
+          .filter((number) =>
+            Number.isFinite(number),
+          );
 
-    loadChits();
-  }, []);
+        const nextNumber =
+          numbers.length > 0
+            ? Math.max(...numbers) + 1
+            : 1;
+
+        setMemberNumber(
+          String(nextNumber),
+        );
+      };
+
+    loadNextMemberNumber();
+  }, [chitId]);
 
   const handleSubmit = async (
     event: React.FormEvent,
@@ -46,53 +71,54 @@ function MemberForm({
 
     setError("");
 
-    if (!chitId) {
-      setError("Please select a chit.");
-      return;
-    }
+    const trimmedName = name.trim();
 
-    if (!memberNumber || Number(memberNumber) <= 0) {
-      setError("Please enter a member number.");
-      return;
-    }
-
-    if (!name.trim()) {
+    if (!trimmedName) {
       setError("Please enter the member name.");
       return;
     }
 
-    if (!joiningDate) {
-      setError("Please select the joining date.");
+    if (!memberNumber.trim()) {
+      setError(
+        "Please enter a member number.",
+      );
       return;
     }
 
     try {
       setSaving(true);
 
-      const now = new Date().toISOString();
+      const existing =
+        await db.members
+          .where("chitId")
+          .equals(chitId)
+          .toArray();
 
-      const member: Member = {
-        chitId: Number(chitId),
+      const duplicate =
+        existing.some(
+          (member) =>
+            member.memberNumber.trim() ===
+            memberNumber.trim(),
+        );
 
-        memberNumber: Number(memberNumber),
+      if (duplicate) {
+        setError(
+          "That member number is already being used in this chit.",
+        );
+        return;
+      }
 
-        name: name.trim(),
-
+      await db.members.add({
+        chitId,
+        memberNumber:
+          memberNumber.trim(),
+        name: trimmedName,
         phone: phone.trim(),
-
         address: address.trim(),
-
         joiningDate,
-
         status: "active",
-
         notes: notes.trim(),
-
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      await db.members.add(member);
+      });
 
       onSaved();
     } catch (err) {
@@ -117,7 +143,7 @@ function MemberForm({
         </h3>
 
         <p className="mt-1 text-sm text-slate-500">
-          Add a member to one of your active chits.
+          Add a new member to this chit.
         </p>
       </div>
 
@@ -129,57 +155,25 @@ function MemberForm({
 
       <div className="grid gap-5 md:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Chit
-          </label>
-
-          <select
-            value={chitId}
-            onChange={(event) =>
-              setChitId(event.target.value)
-            }
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
-          >
-            <option value="">
-              Select a chit
-            </option>
-
-            {chits.map((chit) => (
-              <option
-                key={chit.id}
-                value={chit.id}
-              >
-                {chit.name}
-              </option>
-            ))}
-          </select>
-
-          {chits.length === 0 && (
-            <p className="mt-1 text-xs text-amber-600">
-              Create an active chit first.
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700">
             Member Number
           </label>
 
           <input
-            type="number"
-            min="1"
+            type="text"
             value={memberNumber}
             onChange={(event) =>
-              setMemberNumber(event.target.value)
+              setMemberNumber(
+                event.target.value,
+              )
             }
-            placeholder="1"
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            placeholder="1"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700">
             Name
           </label>
 
@@ -189,13 +183,14 @@ function MemberForm({
             onChange={(event) =>
               setName(event.target.value)
             }
-            placeholder="Member name"
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            placeholder="Member name"
+            required
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700">
             Phone
           </label>
 
@@ -205,13 +200,13 @@ function MemberForm({
             onChange={(event) =>
               setPhone(event.target.value)
             }
-            placeholder="Phone number"
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            placeholder="Phone number"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700">
             Joining Date
           </label>
 
@@ -219,30 +214,34 @@ function MemberForm({
             type="date"
             value={joiningDate}
             onChange={(event) =>
-              setJoiningDate(event.target.value)
+              setJoiningDate(
+                event.target.value,
+              )
             }
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700">
             Address
           </label>
 
           <textarea
             value={address}
             onChange={(event) =>
-              setAddress(event.target.value)
+              setAddress(
+                event.target.value,
+              )
             }
             rows={2}
-            placeholder="Member address"
+            placeholder="Optional address"
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-slate-700">
             Notes
           </label>
 
@@ -262,17 +261,20 @@ function MemberForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          disabled={saving}
+          className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
           Cancel
         </button>
 
         <button
           type="submit"
-          disabled={saving || chits.length === 0}
+          disabled={saving}
           className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? "Saving..." : "Save Member"}
+          {saving
+            ? "Saving..."
+            : "Save Member"}
         </button>
       </div>
     </form>
