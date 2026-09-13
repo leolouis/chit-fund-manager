@@ -3,13 +3,16 @@ export interface Auction {
 
   chitId: number;
   cycleId: number;
-  memberId: number;
+
+  winnerMemberId: number;
 
   auctionDate: string;
 
   bidAmount: number;
   discountAmount: number;
   prizeAmount: number;
+
+  status: "completed" | "cancelled";
 
   notes: string;
 
