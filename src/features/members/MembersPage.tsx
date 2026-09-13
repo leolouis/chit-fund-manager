@@ -22,44 +22,102 @@ function MembersPage() {
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-slate-900">
-          Members
-        </h3>
+    <div className="page-content">
+      {/* Page heading */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "20px",
+          marginBottom: "24px",
+        }}
+      >
+        <div>
+          <h3
+            style={{
+              margin: 0,
+              fontSize: "24px",
+              fontWeight: 750,
+              color: "#0f172a",
+            }}
+          >
+            Members
+          </h3>
 
-        <p className="mt-1 text-sm text-slate-500">
-          Manage members belonging to your chit groups.
-        </p>
+          <p
+            style={{
+              margin: "5px 0 0",
+              color: "#64748b",
+              fontSize: "14px",
+            }}
+          >
+            Manage members belonging to your chit groups.
+          </p>
+        </div>
       </div>
 
-      <MemberList
-        selectedChitId={selectedChitId}
-        onChitChange={setSelectedChitId}
-        refreshKey={refreshKey}
-      />
+      {/* Member management card */}
+      <div className="card">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px",
+            marginBottom: "20px",
+          }}
+        >
+          <div>
+            <h4 className="card-title">
+              Member Directory
+            </h4>
 
-      {selectedChitId !== null && (
-        <div className="mt-6">
-          {!showForm ? (
-            <div className="flex justify-end">
+            <p className="card-subtitle">
+              Select a chit group to view and manage its
+              members.
+            </p>
+          </div>
+
+          {selectedChitId !== null &&
+            !showForm && (
               <button
                 type="button"
                 onClick={() => setShowForm(true)}
-                className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700"
+                className="btn btn-primary"
               >
-                + Add Member
+                <span
+                  style={{
+                    fontSize: "17px",
+                    lineHeight: 1,
+                  }}
+                >
+                  +
+                </span>
+
+                Add Member
               </button>
-            </div>
-          ) : (
+            )}
+        </div>
+
+        <MemberList
+          selectedChitId={selectedChitId}
+          onChitChange={setSelectedChitId}
+          refreshKey={refreshKey}
+        />
+      </div>
+
+      {/* Member form */}
+      {selectedChitId !== null &&
+        showForm && (
+          <div style={{ marginTop: "20px" }}>
             <MemberForm
               chitId={selectedChitId}
               onSaved={handleSaved}
               onCancel={handleCancel}
             />
-          )}
-        </div>
-      )}
+          </div>
+        )}
     </div>
   );
 }
