@@ -9,6 +9,7 @@ const menuItems = [
   { id: "members", label: "Members" },
   { id: "collections", label: "Collections" },
   { id: "outstanding", label: "Outstanding" },
+  { id: "cycles", label: "Monthly Cycles" },
   { id: "auctions", label: "Auctions" },
   { id: "reports", label: "Reports" },
 ];
