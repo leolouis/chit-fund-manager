@@ -1,26 +1,19 @@
-export type MemberStatus =
-  | "active"
-  | "inactive";
-
 export interface Member {
   id?: number;
 
   chitId: number;
 
-  memberNumber: number;
+  memberNumber: string;
 
   name: string;
 
-  phone?: string;
+  phone: string;
 
-  address?: string;
+  address: string;
 
   joiningDate: string;
 
-  status: MemberStatus;
+  status: "active" | "inactive";
 
-  notes?: string;
-
-  createdAt: string;
-  updatedAt: string;
+  notes: string;
 }
