@@ -1,11 +1,50 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { db } from "../../db/database";
 import ChitForm from "./ChitForm";
 import ChitList from "./ChitList";
 
 function ChitsPage() {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [totalChits, setTotalChits] = useState(0);
+  const [activeChits, setActiveChits] = useState(0);
+  const [completedChits, setCompletedChits] =
+    useState(0);
+
+  useEffect(() => {
+    const loadSummary = async () => {
+      try {
+        const chits = await db.chits.toArray();
+
+        setTotalChits(chits.length);
+
+        setActiveChits(
+          chits.filter(
+            (chit) =>
+              String(chit.status).toLowerCase() ===
+              "active",
+          ).length,
+        );
+
+        setCompletedChits(
+          chits.filter(
+            (chit) =>
+              String(chit.status).toLowerCase() ===
+              "completed",
+          ).length,
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load chit summary:",
+          error,
+        );
+      }
+    };
+
+    loadSummary();
+  }, [refreshKey]);
 
   const handleSaved = () => {
     setShowForm(false);
@@ -76,7 +115,7 @@ function ChitsPage() {
         </button>
       </div>
 
-      {/* Summary cards */}
+      {/* Summary */}
       <div
         style={{
           display: "grid",
@@ -86,13 +125,13 @@ function ChitsPage() {
           marginBottom: "20px",
         }}
       >
-        <div className="card">
+        <div className="stat-card">
           <div className="stat-label">
             Total Chits
           </div>
 
           <div className="stat-value">
-            —
+            {totalChits}
           </div>
 
           <div className="stat-description">
@@ -100,13 +139,13 @@ function ChitsPage() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="stat-card">
           <div className="stat-label">
             Active Chits
           </div>
 
           <div className="stat-value">
-            —
+            {activeChits}
           </div>
 
           <div className="stat-description">
@@ -114,13 +153,13 @@ function ChitsPage() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="stat-card">
           <div className="stat-label">
             Completed
           </div>
 
           <div className="stat-value">
-            —
+            {completedChits}
           </div>
 
           <div className="stat-description">
@@ -133,22 +172,17 @@ function ChitsPage() {
       <div className="card">
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
             marginBottom: "18px",
           }}
         >
-          <div>
-            <h4 className="card-title">
-              Chit Groups
-            </h4>
+          <h4 className="card-title">
+            Chit Groups
+          </h4>
 
-            <p className="card-subtitle">
-              Manage your registered chit groups and
-              their details.
-            </p>
-          </div>
+          <p className="card-subtitle">
+            Manage your registered chit groups and
+            their details.
+          </p>
         </div>
 
         <ChitList refreshKey={refreshKey} />
