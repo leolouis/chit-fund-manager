@@ -28,9 +28,23 @@ export class ChitFundDatabase extends Dexie {
 
       payments:
         "++id, chitId, cycleId, memberId, monthNumber, paymentDate",
+    });
+
+    this.version(2).stores({
+      chits:
+        "++id, name, status, startDate",
+
+      members:
+        "++id, chitId, memberNumber, name, phone, status",
+
+      cycles:
+        "++id, chitId, monthNumber, dueDate, status",
+
+      payments:
+        "++id, chitId, cycleId, memberId, monthNumber, paymentDate",
 
       auctions:
-        "++id, chitId, monthNumber, auctionDate, winnerMemberId",
+        "++id, chitId, cycleId, winnerMemberId, auctionDate",
     });
   }
 }
