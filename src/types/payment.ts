@@ -1,25 +1,24 @@
-export type PaymentMethod =
-  | "cash"
-  | "upi"
-  | "bank"
-  | "other";
-
 export interface Payment {
   id?: number;
 
   chitId: number;
+
   memberId: number;
+
+  cycleId?: number;
 
   monthNumber: number;
 
   amountDue: number;
+
   amountPaid: number;
 
-  paymentDate?: string;
+  paymentDate: string;
 
-  paymentMethod?: PaymentMethod;
+  paymentMethod: string;
 
   notes?: string;
 
   createdAt: string;
+  updatedAt: string;
 }
