@@ -41,9 +41,9 @@ function Sidebar({
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col bg-slate-900 text-white">
       {/* Brand */}
-      <div className="border-b border-slate-800 p-5">
+      <div className="border-b border-slate-800 px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-lg font-bold">
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px] bg-violet-600 text-lg font-bold text-white">
             ₹
           </div>
 
@@ -79,17 +79,17 @@ function Sidebar({
                     onClick={() =>
                       onNavigate(item.id)
                     }
-                    className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium transition ${
+                    className={`flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-violet-600 text-white"
                         : "text-slate-300 hover:bg-slate-800 hover:text-white"
                     }`}
                   >
-                    <span className="mr-3 flex w-5 justify-center text-base font-bold">
+                    <span className="mr-3 flex w-5 shrink-0 justify-center text-base font-bold">
                       {item.icon}
                     </span>
 
-                    {item.label}
+                    <span>{item.label}</span>
                   </button>
                 );
               })}
@@ -101,7 +101,7 @@ function Sidebar({
       {/* Bottom status */}
       <div className="border-t border-slate-800 p-4">
         <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
 
           <span>Data stored locally</span>
         </div>
