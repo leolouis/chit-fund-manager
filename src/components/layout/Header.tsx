@@ -4,22 +4,75 @@ interface HeaderProps {
 
 function Header({ title }: HeaderProps) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-      <h2 className="text-xl font-semibold text-slate-900">
-        {title}
-      </h2>
+    <header className="app-header">
+      <div>
+        <h2 className="app-header-title">
+          {title}
+        </h2>
 
-      <div className="flex items-center gap-3">
-        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+        <p className="app-header-subtitle">
+          Chit Fund Management
+        </p>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "7px",
+            padding: "7px 11px",
+            borderRadius: "999px",
+            background: "#ecfdf5",
+            border: "1px solid #a7f3d0",
+            color: "#047857",
+            fontSize: "12px",
+            fontWeight: 600,
+          }}
+        >
+          <span
+            style={{
+              width: "7px",
+              height: "7px",
+              borderRadius: "50%",
+              background: "#10b981",
+            }}
+          />
+
           Offline
-        </span>
+        </div>
 
         <button
           type="button"
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+          className="btn btn-secondary"
         >
+          <span>↓</span>
           Backup
         </button>
+
+        <div
+          style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "50%",
+            background: "#ede9fe",
+            color: "#6d28d9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+            fontSize: "14px",
+          }}
+          title="Host"
+        >
+          H
+        </div>
       </div>
     </header>
   );
