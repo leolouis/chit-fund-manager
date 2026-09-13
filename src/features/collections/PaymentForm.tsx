@@ -43,25 +43,47 @@ function PaymentForm({
 
   useEffect(() => {
     const loadMembers = async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      const results = await db.members
-        .where("chitId")
-        .equals(chit.id!)
-        .toArray();
+        const results = await db.members
+          .where("chitId")
+          .equals(chit.id!)
+          .toArray();
 
-      setMembers(
-        results.filter(
-          (member) =>
-            member.status === "active",
-        ),
-      );
-
-      setLoading(false);
+        setMembers(
+          results.filter(
+            (member) =>
+              member.status === "active",
+          ),
+        );
+      } catch (err) {
+        console.error(
+          "Unable to load members:",
+          err,
+        );
+        setError(
+          "Unable to load members. Please try again.",
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadMembers();
   }, [chit.id]);
+
+  const selectedMember = members.find(
+    (member) =>
+      member.id === Number(memberId),
+  );
+
+  const paidAmount = Number(amountPaid) || 0;
+
+  const balance = Math.max(
+    0,
+    chit.monthlyAmount - paidAmount,
+  );
 
   const handleSubmit = async (
     event: React.FormEvent,
@@ -75,9 +97,7 @@ function PaymentForm({
       return;
     }
 
-    const paid = Number(amountPaid);
-
-    if (!amountPaid || paid <= 0) {
+    if (!amountPaid || paidAmount <= 0) {
       setError(
         "Please enter a valid payment amount.",
       );
@@ -92,6 +112,30 @@ function PaymentForm({
     try {
       setSaving(true);
 
+      /*
+       * Prevent duplicate payment records for the
+       * same member and monthly cycle.
+       */
+      const existingPayments =
+        await db.payments
+          .where("cycleId")
+          .equals(cycle.id!)
+          .toArray();
+
+      const alreadyPaid =
+        existingPayments.find(
+          (payment) =>
+            payment.memberId ===
+            Number(memberId),
+        );
+
+      if (alreadyPaid) {
+        setError(
+          `${selectedMember?.name ?? "This member"} already has a payment recorded for Month ${cycle.monthNumber}.`,
+        );
+        return;
+      }
+
       const now = new Date().toISOString();
 
       await db.payments.add({
@@ -100,7 +144,7 @@ function PaymentForm({
         cycleId: cycle.id!,
         monthNumber: cycle.monthNumber,
         amountDue: chit.monthlyAmount,
-        amountPaid: paid,
+        amountPaid: paidAmount,
         paymentDate,
         paymentMethod,
         notes: notes.trim(),
@@ -110,7 +154,10 @@ function PaymentForm({
 
       onSaved();
     } catch (err) {
-      console.error(err);
+      console.error(
+        "Unable to save payment:",
+        err,
+      );
 
       setError(
         "Unable to save the payment. Please try again.",
@@ -123,29 +170,57 @@ function PaymentForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="card"
     >
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold text-slate-900">
-          Record Payment
-        </h3>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "16px",
+          marginBottom: "22px",
+        }}
+      >
+        <div>
+          <h3 className="card-title">
+            Record Payment
+          </h3>
 
-        <p className="mt-1 text-sm text-slate-500">
-          {chit.name} · Month{" "}
-          {cycle.monthNumber}
-        </p>
+          <p className="card-subtitle">
+            {chit.name}
+            {" · "}
+            Month {cycle.monthNumber}
+          </p>
+        </div>
+
+        <span className="badge badge-info">
+          Month {cycle.monthNumber}
+        </span>
       </div>
 
+      {/* Error */}
       {error && (
-        <div className="mb-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        <div
+          className="alert alert-danger"
+          style={{ marginBottom: "18px" }}
+        >
           {error}
         </div>
       )}
 
-      <div className="grid gap-5 md:grid-cols-2">
+      {/* Form fields */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(2, minmax(0, 1fr))",
+          gap: "18px",
+        }}
+      >
         {/* Member */}
-        <div className="md:col-span-2">
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label className="form-label">
             Member
           </label>
 
@@ -155,7 +230,7 @@ function PaymentForm({
               setMemberId(event.target.value)
             }
             disabled={loading}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+            className="form-input"
           >
             <option value="">
               {loading
@@ -176,21 +251,39 @@ function PaymentForm({
 
           {!loading &&
             members.length === 0 && (
-              <p className="mt-2 text-xs text-amber-600">
+              <div
+                style={{
+                  marginTop: "7px",
+                  color: "#d97706",
+                  fontSize: "12px",
+                }}
+              >
                 No active members found for this
-                chit. Add members before recording
-                payments.
-              </p>
+                chit. Add a member before recording
+                a payment.
+              </div>
             )}
         </div>
 
-        {/* Due Amount */}
+        {/* Amount Due */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="form-label">
             Amount Due
           </label>
 
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 font-medium text-slate-900">
+          <div
+            style={{
+              minHeight: "42px",
+              display: "flex",
+              alignItems: "center",
+              padding: "0 12px",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+              background: "#f8fafc",
+              fontWeight: 650,
+              color: "#0f172a",
+            }}
+          >
             ₹
             {chit.monthlyAmount.toLocaleString(
               "en-IN",
@@ -200,7 +293,7 @@ function PaymentForm({
 
         {/* Amount Paid */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="form-label">
             Amount Paid
           </label>
 
@@ -212,13 +305,13 @@ function PaymentForm({
             onChange={(event) =>
               setAmountPaid(event.target.value)
             }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            className="form-input"
           />
         </div>
 
         {/* Payment Date */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="form-label">
             Payment Date
           </label>
 
@@ -228,13 +321,13 @@ function PaymentForm({
             onChange={(event) =>
               setPaymentDate(event.target.value)
             }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            className="form-input"
           />
         </div>
 
         {/* Payment Method */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="form-label">
             Payment Method
           </label>
 
@@ -245,7 +338,7 @@ function PaymentForm({
                 event.target.value,
               )
             }
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            className="form-input"
           >
             <option value="Cash">
               Cash
@@ -270,8 +363,8 @@ function PaymentForm({
         </div>
 
         {/* Notes */}
-        <div className="md:col-span-2">
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label className="form-label">
             Notes
           </label>
 
@@ -282,45 +375,115 @@ function PaymentForm({
             }
             rows={3}
             placeholder="Optional payment notes"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+            className="form-input"
+            style={{
+              resize: "vertical",
+              minHeight: "80px",
+            }}
           />
         </div>
       </div>
 
-      {/* Balance Preview */}
-      {amountPaid && (
-        <div className="mt-5 rounded-lg bg-slate-50 p-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-600">
-              Outstanding for this month
-            </span>
+      {/* Payment preview */}
+      <div
+        style={{
+          marginTop: "20px",
+          padding: "16px",
+          borderRadius: "10px",
+          background:
+            balance === 0
+              ? "#ecfdf5"
+              : "#fff7ed",
+          border:
+            balance === 0
+              ? "1px solid #a7f3d0"
+              : "1px solid #fed7aa",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(3, 1fr)",
+            gap: "14px",
+          }}
+        >
+          <div>
+            <div className="stat-label">
+              Amount Due
+            </div>
 
-            <strong
-              className={
-                Number(amountPaid) >=
-                chit.monthlyAmount
-                  ? "text-emerald-600"
-                  : "text-red-600"
-              }
+            <div
+              style={{
+                marginTop: "4px",
+                fontWeight: 700,
+                color: "#0f172a",
+              }}
             >
               ₹
-              {Math.max(
-                0,
-                chit.monthlyAmount -
-                  Number(amountPaid),
-              ).toLocaleString("en-IN")}
-            </strong>
+              {chit.monthlyAmount.toLocaleString(
+                "en-IN",
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="stat-label">
+              Amount Paid
+            </div>
+
+            <div
+              style={{
+                marginTop: "4px",
+                fontWeight: 700,
+                color: "#059669",
+              }}
+            >
+              ₹
+              {paidAmount.toLocaleString(
+                "en-IN",
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="stat-label">
+              Balance
+            </div>
+
+            <div
+              style={{
+                marginTop: "4px",
+                fontWeight: 700,
+                color:
+                  balance === 0
+                    ? "#059669"
+                    : "#d97706",
+              }}
+            >
+              ₹
+              {balance.toLocaleString(
+                "en-IN",
+              )}
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Buttons */}
-      <div className="mt-6 flex justify-end gap-3">
+      <div
+        style={{
+          marginTop: "22px",
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "10px",
+        }}
+      >
         <button
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="btn btn-secondary"
         >
           Cancel
         </button>
@@ -332,7 +495,7 @@ function PaymentForm({
             loading ||
             members.length === 0
           }
-          className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn btn-primary"
         >
           {saving
             ? "Saving..."
