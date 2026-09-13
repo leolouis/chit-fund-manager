@@ -3,9 +3,9 @@ export interface Payment {
 
   chitId: number;
 
-  memberId: number;
+  cycleId: number;
 
-  cycleId?: number;
+  memberId: number;
 
   monthNumber: number;
 
@@ -17,8 +17,9 @@ export interface Payment {
 
   paymentMethod: string;
 
-  notes?: string;
+  notes: string;
 
   createdAt: string;
+
   updatedAt: string;
 }
