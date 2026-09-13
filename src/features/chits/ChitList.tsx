@@ -15,21 +15,54 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+function formatDate(date: string) {
+  if (!date) return "—";
+
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return date;
+  }
+
+  return parsed.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function ChitList({ refreshKey }: ChitListProps) {
   const [chits, setChits] = useState<Chit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const loadChits = async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
+        setError("");
 
-      const results = await db.chits
-        .orderBy("createdAt")
-        .reverse()
-        .toArray();
+        const results = await db.chits.toArray();
 
-      setChits(results);
-      setLoading(false);
+        results.sort((a, b) => {
+          const dateA = a.createdAt
+            ? new Date(a.createdAt).getTime()
+            : 0;
+
+          const dateB = b.createdAt
+            ? new Date(b.createdAt).getTime()
+            : 0;
+
+          return dateB - dateA;
+        });
+
+        setChits(results);
+      } catch (err) {
+        console.error("Failed to load chits:", err);
+        setError("Unable to load chits.");
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadChits();
@@ -37,99 +70,170 @@ function ChitList({ refreshKey }: ChitListProps) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-6">
-        <p className="text-sm text-slate-500">
+      <div className="empty-state">
+        <div className="empty-state-title">
           Loading chits...
-        </p>
+        </div>
+
+        <div className="empty-state-text">
+          Please wait while your local data is loaded.
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger">
+        {error}
       </div>
     );
   }
 
   if (chits.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-        <h3 className="font-semibold text-slate-900">
-          No chits yet
-        </h3>
+      <div className="empty-state">
+        <div
+          style={{
+            width: "52px",
+            height: "52px",
+            margin: "0 auto 14px",
+            borderRadius: "12px",
+            background: "#ede9fe",
+            color: "#7c3aed",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "22px",
+            fontWeight: 700,
+          }}
+        >
+          ₹
+        </div>
 
-        <p className="mt-2 text-sm text-slate-500">
-          Create your first chit to get started.
-        </p>
+        <div className="empty-state-title">
+          No chits yet
+        </div>
+
+        <div className="empty-state-text">
+          Create your first chit group to get started.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50">
-            <tr>
-              <th className="px-5 py-3 font-semibold text-slate-600">
-                Chit
-              </th>
+    <div className="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Chit</th>
+            <th>Monthly</th>
+            <th>Members</th>
+            <th>Duration</th>
+            <th>Start Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
 
-              <th className="px-5 py-3 font-semibold text-slate-600">
-                Monthly
-              </th>
-
-              <th className="px-5 py-3 font-semibold text-slate-600">
-                Members
-              </th>
-
-              <th className="px-5 py-3 font-semibold text-slate-600">
-                Duration
-              </th>
-
-              <th className="px-5 py-3 font-semibold text-slate-600">
-                Start Date
-              </th>
-
-              <th className="px-5 py-3 font-semibold text-slate-600">
-                Status
-              </th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-slate-100">
-            {chits.map((chit) => (
-              <tr key={chit.id}>
-                <td className="px-5 py-4">
-                  <div className="font-medium text-slate-900">
-                    {chit.name}
+        <tbody>
+          {chits.map((chit) => (
+            <tr key={chit.id}>
+              <td>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "11px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "9px",
+                      background: "#ede9fe",
+                      color: "#7c3aed",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {chit.name
+                      ? chit.name.charAt(0).toUpperCase()
+                      : "C"}
                   </div>
 
-                  <div className="text-xs text-slate-500">
-                    {formatCurrency(chit.chitAmount)}
-                  </div>
-                </td>
+                  <div>
+                    <div
+                      style={{
+                        fontWeight: 650,
+                        color: "#0f172a",
+                      }}
+                    >
+                      {chit.name}
+                    </div>
 
-                <td className="px-5 py-4 text-slate-700">
+                    <div
+                      style={{
+                        marginTop: "2px",
+                        color: "#64748b",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {formatCurrency(chit.chitAmount)}
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <td>
+                <strong
+                  style={{
+                    color: "#334155",
+                    fontWeight: 600,
+                  }}
+                >
                   {formatCurrency(chit.monthlyAmount)}
-                </td>
+                </strong>
+              </td>
 
-                <td className="px-5 py-4 text-slate-700">
+              <td>
+                <span
+                  style={{
+                    color: "#334155",
+                    fontWeight: 600,
+                  }}
+                >
                   {chit.memberCount}
-                </td>
+                </span>
+              </td>
 
-                <td className="px-5 py-4 text-slate-700">
-                  {chit.durationMonths} months
-                </td>
+              <td>
+                {chit.durationMonths} months
+              </td>
 
-                <td className="px-5 py-4 text-slate-700">
-                  {chit.startDate}
-                </td>
+              <td>
+                {formatDate(chit.startDate)}
+              </td>
 
-                <td className="px-5 py-4">
-                  <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                    {chit.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              <td>
+                <span
+                  className={
+                    chit.status === "active"
+                      ? "badge badge-success"
+                      : "badge badge-neutral"
+                  }
+                >
+                  {chit.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
