@@ -1,26 +1,26 @@
 {
   "name": "chit-fund-manager",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "dexie": "...",
-    "dexie-react-hooks": "...",
-    "react": "...",
-    "react-dom": "...",
-    "xlsx": "..."
+    "dexie": "^4.2.1",
+    "dexie-react-hooks": "^1.1.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/react": "...",
-    "@types/react-dom": "...",
-    "@vitejs/plugin-react": "...",
-    "typescript": "...",
-    "vite": "..."
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3"
   }
 }
