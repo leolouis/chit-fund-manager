@@ -7,8 +7,5 @@ export interface Cycle {
 
   dueDate: string;
 
-  status: "upcoming" | "open" | "completed";
-
-  createdAt: string;
-  updatedAt: string;
+  status: "open" | "closed";
 }
