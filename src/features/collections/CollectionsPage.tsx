@@ -22,22 +22,44 @@ function CollectionsPage() {
   const [showPaymentForm, setShowPaymentForm] =
     useState(false);
 
+  const [loadingChits, setLoadingChits] =
+    useState(true);
+
+  const [loadingCycles, setLoadingCycles] =
+    useState(false);
+
   useEffect(() => {
     const loadChits = async () => {
-      const results = await db.chits
-        .where("status")
-        .equals("active")
-        .toArray();
+      try {
+        setLoadingChits(true);
 
-      setChits(results);
+        const results = await db.chits
+          .where("status")
+          .equals("active")
+          .toArray();
 
-      if (
-        results.length > 0 &&
-        !selectedChitId
-      ) {
-        setSelectedChitId(
-          String(results[0].id),
+        setChits(results);
+
+        if (
+          results.length > 0 &&
+          !selectedChitId
+        ) {
+          setSelectedChitId(
+            String(results[0].id),
+          );
+        }
+
+        if (results.length === 0) {
+          setSelectedChitId("");
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load chits:",
+          error,
         );
+        setChits([]);
+      } finally {
+        setLoadingChits(false);
       }
     };
 
@@ -52,29 +74,38 @@ function CollectionsPage() {
         return;
       }
 
-      const results = await db.cycles
-        .where("chitId")
-        .equals(Number(selectedChitId))
-        .sortBy("monthNumber");
+      try {
+        setLoadingCycles(true);
 
-      setCycles(results);
+        const results = await db.cycles
+          .where("chitId")
+          .equals(Number(selectedChitId))
+          .sortBy("monthNumber");
 
-      if (results.length > 0) {
-        const openCycle =
-          results.find(
-            (cycle) =>
-              cycle.status === "open",
+        setCycles(results);
+
+        if (results.length > 0) {
+          const openCycle = results.find(
+            (cycle) => cycle.status === "open",
           );
 
-        setSelectedCycleId(
-          String(
-            (
-              openCycle ?? results[0]
-            ).id,
-          ),
+          setSelectedCycleId(
+            String(
+              (openCycle ?? results[0]).id,
+            ),
+          );
+        } else {
+          setSelectedCycleId("");
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load cycles:",
+          error,
         );
-      } else {
+        setCycles([]);
         setSelectedCycleId("");
+      } finally {
+        setLoadingCycles(false);
       }
     };
 
@@ -93,30 +124,59 @@ function CollectionsPage() {
 
   const handlePaymentSaved = () => {
     setShowPaymentForm(false);
-    setRefreshKey(
-      (value) => value + 1,
-    );
+    setRefreshKey((value) => value + 1);
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-slate-900">
-          Collections
-        </h3>
+    <div className="page-content">
+      {/* Page heading */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "20px",
+          marginBottom: "24px",
+        }}
+      >
+        <div>
+          <h3
+            style={{
+              margin: 0,
+              fontSize: "24px",
+              fontWeight: 750,
+              color: "#0f172a",
+            }}
+          >
+            Collections
+          </h3>
 
-        <p className="mt-1 text-sm text-slate-500">
-          Record and manage monthly member payments.
-        </p>
+          <p
+            style={{
+              margin: "5px 0 0",
+              color: "#64748b",
+              fontSize: "14px",
+            }}
+          >
+            Record and manage monthly member
+            payments.
+          </p>
+        </div>
       </div>
 
       {/* Selection */}
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-5 md:grid-cols-2">
-          {/* Chit */}
+      <div className="card">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(2, minmax(0, 1fr))",
+            gap: "16px",
+          }}
+        >
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Chit
+            <label className="form-label">
+              Chit Group
             </label>
 
             <select
@@ -127,10 +187,13 @@ function CollectionsPage() {
                 );
                 setShowPaymentForm(false);
               }}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+              disabled={loadingChits}
+              className="form-input"
             >
               <option value="">
-                Select a chit
+                {loadingChits
+                  ? "Loading chits..."
+                  : "Select a chit"}
               </option>
 
               {chits.map((chit) => (
@@ -144,9 +207,8 @@ function CollectionsPage() {
             </select>
           </div>
 
-          {/* Cycle */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
+            <label className="form-label">
               Monthly Cycle
             </label>
 
@@ -158,10 +220,17 @@ function CollectionsPage() {
                 );
                 setShowPaymentForm(false);
               }}
-              disabled={cycles.length === 0}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none disabled:bg-slate-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+              disabled={
+                cycles.length === 0 ||
+                loadingCycles
+              }
+              className="form-input"
             >
-              {cycles.length === 0 ? (
+              {loadingCycles ? (
+                <option value="">
+                  Loading cycles...
+                </option>
+              ) : cycles.length === 0 ? (
                 <option value="">
                   No cycles available
                 </option>
@@ -180,45 +249,106 @@ function CollectionsPage() {
           </div>
         </div>
 
-        {selectedChit &&
-          selectedCycle && (
-            <div className="mt-5 rounded-lg bg-violet-50 p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-violet-900">
-                    {selectedChit.name}
-                  </p>
+        {/* Selected cycle information */}
+        {selectedChit && selectedCycle && (
+          <div
+            style={{
+              marginTop: "18px",
+              padding: "16px",
+              borderRadius: "10px",
+              background:
+                "linear-gradient(135deg, #f5f3ff, #faf5ff)",
+              border: "1px solid #ddd6fe",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "20px",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  color: "#5b21b6",
+                }}
+              >
+                {selectedChit.name}
+              </div>
 
-                  <p className="mt-1 text-sm text-violet-700">
-                    Month{" "}
-                    {selectedCycle.monthNumber}{" "}
-                    · Due{" "}
-                    {selectedCycle.dueDate}
-                  </p>
-                </div>
-
-                <div className="text-left sm:text-right">
-                  <p className="text-xs text-violet-600">
-                    Monthly Contribution
-                  </p>
-
-                  <p className="text-lg font-bold text-violet-900">
-                    ₹
-                    {selectedChit.monthlyAmount.toLocaleString(
-                      "en-IN",
-                    )}
-                  </p>
-                </div>
+              <div
+                style={{
+                  marginTop: "4px",
+                  fontSize: "13px",
+                  color: "#7c3aed",
+                }}
+              >
+                Month {selectedCycle.monthNumber}
+                {" · "}
+                Due {selectedCycle.dueDate}
               </div>
             </div>
-          )}
+
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "#7c3aed",
+                  fontWeight: 600,
+                }}
+              >
+                MONTHLY CONTRIBUTION
+              </div>
+
+              <div
+                style={{
+                  marginTop: "3px",
+                  fontSize: "20px",
+                  fontWeight: 750,
+                  color: "#4c1d95",
+                }}
+              >
+                ₹
+                {selectedChit.monthlyAmount.toLocaleString(
+                  "en-IN",
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Payment Form */}
+      {/* No cycles */}
+      {selectedChit &&
+        !loadingCycles &&
+        cycles.length === 0 && (
+          <div
+            className="alert alert-warning"
+            style={{ marginTop: "20px" }}
+          >
+            <div>
+              <strong>
+                No monthly cycles found.
+              </strong>
+
+              <div
+                style={{
+                  marginTop: "3px",
+                  fontSize: "13px",
+                }}
+              >
+                Create the monthly cycles for this
+                chit before recording payments.
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* Payment form */}
       {showPaymentForm &&
         selectedChit &&
         selectedCycle && (
-          <div className="mb-6">
+          <div style={{ marginTop: "20px" }}>
             <PaymentForm
               chit={selectedChit}
               cycle={selectedCycle}
@@ -230,45 +360,106 @@ function CollectionsPage() {
           </div>
         )}
 
-      {/* Add Payment Button */}
+      {/* Payment actions */}
       {!showPaymentForm &&
         selectedChit &&
         selectedCycle && (
-          <div className="mb-6 flex justify-end">
+          <div
+            style={{
+              marginTop: "20px",
+              marginBottom: "16px",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
             <button
               type="button"
               onClick={() =>
                 setShowPaymentForm(true)
               }
-              className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700"
+              className="btn btn-primary"
             >
-              + Record Payment
+              <span
+                style={{
+                  fontSize: "17px",
+                  lineHeight: 1,
+                }}
+              >
+                +
+              </span>
+
+              Record Payment
             </button>
           </div>
         )}
 
-      {/* Payment List */}
-      {selectedChit &&
-        selectedCycle && (
-          <PaymentList
-            chit={selectedChit}
-            cycle={selectedCycle}
-            refreshKey={refreshKey}
-          />
-        )}
+      {/* Payment list */}
+      {selectedChit && selectedCycle && (
+        <div
+          style={{
+            marginTop: "20px",
+          }}
+        >
+          <div className="card">
+            <div
+              style={{
+                marginBottom: "18px",
+              }}
+            >
+              <h4 className="card-title">
+                Payment Records
+              </h4>
 
-      {!selectedChit && (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <h3 className="font-semibold text-slate-900">
-            Select a chit
-          </h3>
+              <p className="card-subtitle">
+                Payments recorded for Month{" "}
+                {selectedCycle.monthNumber}.
+              </p>
+            </div>
 
-          <p className="mt-2 text-sm text-slate-500">
-            Select a chit above to view its monthly
-            collections.
-          </p>
+            <PaymentList
+              chit={selectedChit}
+              cycle={selectedCycle}
+              refreshKey={refreshKey}
+            />
+          </div>
         </div>
       )}
+
+      {/* No chits */}
+      {!loadingChits &&
+        chits.length === 0 && (
+          <div
+            className="empty-state"
+            style={{ marginTop: "20px" }}
+          >
+            <div
+              style={{
+                width: "52px",
+                height: "52px",
+                margin: "0 auto 14px",
+                borderRadius: "12px",
+                background: "#ede9fe",
+                color: "#7c3aed",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "22px",
+                fontWeight: 700,
+              }}
+            >
+              ₹
+            </div>
+
+            <div className="empty-state-title">
+              No active chits
+            </div>
+
+            <div className="empty-state-text">
+              Create an active chit before
+              recording collections.
+            </div>
+          </div>
+        )}
     </div>
   );
 }
