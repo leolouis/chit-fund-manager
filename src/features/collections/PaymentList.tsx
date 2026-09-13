@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { db } from "../../db/database";
 import type { Chit } from "../../types/chit";
 import type { Cycle } from "../../types/cycle";
-import type { Payment } from "../../types/payment";
 import type { Member } from "../../types/member";
+import type { Payment } from "../../types/payment";
 
 interface PaymentListProps {
   chit: Chit;
@@ -12,9 +12,12 @@ interface PaymentListProps {
   refreshKey: number;
 }
 
-interface PaymentWithMember {
-  payment: Payment;
-  member?: Member;
+interface MemberCollection {
+  member: Member;
+  payments: Payment[];
+  amountDue: number;
+  amountPaid: number;
+  balance: number;
 }
 
 function formatCurrency(amount: number) {
@@ -26,61 +29,118 @@ function PaymentList({
   cycle,
   refreshKey,
 }: PaymentListProps) {
-  const [payments, setPayments] =
-    useState<PaymentWithMember[]>([]);
+  const [collections, setCollections] = useState<
+    MemberCollection[]
+  >([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPayments = async () => {
+    const loadCollections = async () => {
       setLoading(true);
 
-      const results = await db.payments
+      const members = await db.members
+        .where("chitId")
+        .equals(chit.id!)
+        .toArray();
+
+      const activeMembers = members.filter(
+        (member) =>
+          member.status === "active",
+      );
+
+      const payments = await db.payments
         .where("cycleId")
         .equals(cycle.id!)
         .toArray();
 
-      const paymentRows =
-        await Promise.all(
-          results.map(async (payment) => {
-            const member =
-              await db.members.get(
-                payment.memberId,
-              );
+      const rows: MemberCollection[] =
+        activeMembers.map((member) => {
+          const memberPayments =
+            payments.filter(
+              (payment) =>
+                payment.memberId === member.id,
+            );
 
-            return {
-              payment,
-              member,
-            };
-          }),
-        );
+          const amountPaid =
+            memberPayments.reduce(
+              (total, payment) =>
+                total + payment.amountPaid,
+              0,
+            );
 
-      setPayments(paymentRows);
+          const amountDue =
+            chit.monthlyAmount;
+
+          const balance = Math.max(
+            0,
+            amountDue - amountPaid,
+          );
+
+          return {
+            member,
+            payments: memberPayments,
+            amountDue,
+            amountPaid,
+            balance,
+          };
+        });
+
+      rows.sort((a, b) =>
+        a.member.memberNumber.localeCompare(
+          b.member.memberNumber,
+          undefined,
+          { numeric: true },
+        ),
+      );
+
+      setCollections(rows);
       setLoading(false);
     };
 
-    loadPayments();
-  }, [cycle.id, refreshKey]);
+    loadCollections();
+  }, [
+    chit.id,
+    chit.monthlyAmount,
+    cycle.id,
+    refreshKey,
+  ]);
+
+  const totalDue = collections.reduce(
+    (total, row) =>
+      total + row.amountDue,
+    0,
+  );
 
   const totalCollected =
-    payments.reduce(
+    collections.reduce(
       (total, row) =>
-        total + row.payment.amountPaid,
+        total + row.amountPaid,
       0,
     );
 
-  const totalDue =
-    payments.reduce(
+  const totalOutstanding =
+    collections.reduce(
       (total, row) =>
-        total + row.payment.amountDue,
+        total + row.balance,
       0,
     );
 
-  const totalOutstanding = Math.max(
-    0,
-    totalDue - totalCollected,
-  );
+  const paidCount = collections.filter(
+    (row) =>
+      row.amountPaid >= row.amountDue,
+  ).length;
+
+  const partialCount = collections.filter(
+    (row) =>
+      row.amountPaid > 0 &&
+      row.amountPaid < row.amountDue,
+  ).length;
+
+  const pendingCount = collections.filter(
+    (row) =>
+      row.amountPaid === 0,
+  ).length;
 
   const collectionPercentage =
     totalDue > 0
@@ -94,7 +154,7 @@ function PaymentList({
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <p className="text-sm text-slate-500">
-          Loading payments...
+          Loading collections...
         </p>
       </div>
     );
@@ -102,15 +162,19 @@ function PaymentList({
 
   return (
     <div>
-      {/* Summary */}
+      {/* Summary Cards */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm text-slate-500">
-            Payments Recorded
+            Expected
           </p>
 
           <p className="mt-1 text-2xl font-bold text-slate-900">
-            {payments.length}
+            {formatCurrency(totalDue)}
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            {collections.length} members
           </p>
         </div>
 
@@ -122,6 +186,11 @@ function PaymentList({
           <p className="mt-1 text-2xl font-bold text-emerald-600">
             {formatCurrency(totalCollected)}
           </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            {collectionPercentage.toFixed(0)}%
+            collected
+          </p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5">
@@ -132,30 +201,66 @@ function PaymentList({
           <p className="mt-1 text-2xl font-bold text-red-600">
             {formatCurrency(totalOutstanding)}
           </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            Still to collect
+          </p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm text-slate-500">
-            Collection
+            Member Status
           </p>
 
-          <p className="mt-1 text-2xl font-bold text-violet-600">
-            {collectionPercentage.toFixed(0)}%
-          </p>
+          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+            <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-medium text-emerald-700">
+              {paidCount} Paid
+            </span>
+
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700">
+              {partialCount} Partial
+            </span>
+
+            <span className="rounded-full bg-red-100 px-2.5 py-1 font-medium text-red-700">
+              {pendingCount} Pending
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Payment Table */}
+      {/* Progress */}
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm font-medium text-slate-700">
+            Collection Progress
+          </p>
+
+          <p className="text-sm font-semibold text-violet-600">
+            {collectionPercentage.toFixed(0)}%
+          </p>
+        </div>
+
+        <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-violet-600 transition-all"
+            style={{
+              width: `${collectionPercentage}%`,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Member Collection Table */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        {payments.length === 0 ? (
+        {collections.length === 0 ? (
           <div className="p-10 text-center">
             <h3 className="font-semibold text-slate-900">
-              No payments recorded
+              No active members
             </h3>
 
             <p className="mt-2 text-sm text-slate-500">
-              No payments have been recorded for
-              Month {cycle.monthNumber} yet.
+              Add members to this chit before
+              recording collections.
             </p>
           </div>
         ) : (
@@ -180,79 +285,141 @@ function PaymentList({
                   </th>
 
                   <th className="px-5 py-3 font-semibold text-slate-600">
-                    Date
+                    Status
                   </th>
 
                   <th className="px-5 py-3 font-semibold text-slate-600">
-                    Method
+                    Payment
                   </th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {payments.map(
-                  ({
-                    payment,
-                    member,
-                  }) => {
-                    const balance =
-                      Math.max(
-                        0,
-                        payment.amountDue -
-                          payment.amountPaid,
-                      );
+                {collections.map(
+                  (row) => {
+                    let status:
+                      | "paid"
+                      | "partial"
+                      | "pending";
+
+                    if (
+                      row.amountPaid >=
+                      row.amountDue
+                    ) {
+                      status = "paid";
+                    } else if (
+                      row.amountPaid > 0
+                    ) {
+                      status = "partial";
+                    } else {
+                      status = "pending";
+                    }
 
                     return (
                       <tr
-                        key={payment.id}
+                        key={row.member.id}
+                        className="hover:bg-slate-50"
                       >
+                        {/* Member */}
                         <td className="px-5 py-4">
                           <p className="font-medium text-slate-900">
-                            {member?.name ??
-                              "Unknown Member"}
+                            {row.member.name}
                           </p>
 
-                          {member && (
-                            <p className="text-xs text-slate-500">
-                              {
-                                member.memberNumber
-                              }
-                            </p>
-                          )}
+                          <p className="text-xs text-slate-500">
+                            {
+                              row.member
+                                .memberNumber
+                            }
+                          </p>
                         </td>
 
+                        {/* Due */}
                         <td className="px-5 py-4 text-slate-700">
                           {formatCurrency(
-                            payment.amountDue,
+                            row.amountDue,
                           )}
                         </td>
 
+                        {/* Paid */}
                         <td className="px-5 py-4 font-medium text-emerald-600">
                           {formatCurrency(
-                            payment.amountPaid,
+                            row.amountPaid,
                           )}
                         </td>
 
+                        {/* Balance */}
                         <td className="px-5 py-4">
-                          {balance === 0 ? (
+                          <span
+                            className={
+                              row.balance === 0
+                                ? "text-emerald-600"
+                                : "font-medium text-red-600"
+                            }
+                          >
+                            {formatCurrency(
+                              row.balance,
+                            )}
+                          </span>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-5 py-4">
+                          {status === "paid" && (
                             <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
                               Paid
                             </span>
-                          ) : (
-                            <span className="font-medium text-red-600">
-                              {formatCurrency(
-                                balance,
-                              )}
+                          )}
+
+                          {status === "partial" && (
+                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                              Partial
+                            </span>
+                          )}
+
+                          {status === "pending" && (
+                            <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
+                              Pending
                             </span>
                           )}
                         </td>
 
-                        <td className="px-5 py-4 text-slate-700">
-                          {payment.paymentDate}
-                        </td>
+                        {/* Payment */}
+                        <td className="px-5 py-4">
+                          {row.payments.length >
+                          0 ? (
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                {
+                                  row
+                                    .payments[
+                                    row
+                                      .payments
+                                      .length -
+                                      1
+                                  ]
+                                    .paymentDate
+                                }
+                              </p>
 
-                        <td className="px-5 py-4 text-slate-700">
-                          {payment.paymentMethod}
+                              <p className="text-xs text-slate-400">
+                                {
+                                  row
+                                    .payments[
+                                    row
+                                      .payments
+                                      .length -
+                                      1
+                                  ]
+                                    .paymentMethod
+                                }
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400">
+                              No payment
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -264,7 +431,6 @@ function PaymentList({
         )}
       </div>
 
-      {/* Chit information */}
       <div className="mt-4 text-right text-xs text-slate-400">
         {chit.name} · Month{" "}
         {cycle.monthNumber}
