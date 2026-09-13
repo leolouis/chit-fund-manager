@@ -3,6 +3,8 @@ import { useState } from "react";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import Dashboard from "./features/dashboard/Dashboard";
+import ChitsPage from "./features/chits/ChitsPage";
+
 
 const pageTitles: Record<string, string> = {
   dashboard: "Dashboard",
@@ -20,6 +22,9 @@ function App() {
     switch (activePage) {
       case "dashboard":
         return <Dashboard />;
+      case "chits":
+        return <ChitsPage />;
+
 
       default:
         return (
