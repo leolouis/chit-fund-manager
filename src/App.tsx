@@ -5,6 +5,8 @@ import Header from "./components/layout/Header";
 import Dashboard from "./features/dashboard/Dashboard";
 import ChitsPage from "./features/chits/ChitsPage";\
 import MembersPage from "./features/members/MembersPage";
+import CollectionsPage from "./features/collections/CollectionsPage";
+
 
 
 
@@ -28,6 +30,9 @@ function App() {
         return <ChitsPage />;
       case "members":
         return <MembersPage />;
+      case "collections":
+        return <CollectionsPage />;
+
 
 
 
