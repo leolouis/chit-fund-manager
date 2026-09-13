@@ -17,6 +17,7 @@ const pageTitles: Record<string, string> = {
   chits: "Chits",
   members: "Members",
   collections: "Collections",
+  outstanding: "Outstanding",
   auctions: "Auctions",
   reports: "Reports",
 };
