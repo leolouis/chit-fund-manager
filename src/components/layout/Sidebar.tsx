@@ -7,69 +7,29 @@ const menuSections = [
 {
 title: "Overview",
 items: [
-{
-id: "dashboard",
-label: "Dashboard",
-icon: "▦",
-color: "#a78bfa",
-},
+{ id: "dashboard", label: "Dashboard", icon: "▦", color: "#a78bfa" },
 ],
 },
 {
 title: "Management",
 items: [
-{
-id: "chits",
-label: "Chits",
-icon: "◫",
-color: "#60a5fa",
-},
-{
-id: "members",
-label: "Members",
-icon: "♙",
-color: "#34d399",
-},
-{
-id: "collections",
-label: "Collections",
-icon: "₹",
-color: "#fbbf24",
-},
-{
-id: "outstanding",
-label: "Outstanding",
-icon: "!",
-color: "#fb7185",
-},
+{ id: "chits", label: "Chits", icon: "◫", color: "#60a5fa" },
+{ id: "members", label: "Members", icon: "♙", color: "#34d399" },
+{ id: "collections", label: "Collections", icon: "₹", color: "#fbbf24" },
+{ id: "outstanding", label: "Outstanding", icon: "!", color: "#fb7185" },
 ],
 },
 {
 title: "Operations",
 items: [
-{
-id: "cycles",
-label: "Monthly Cycles",
-icon: "↻",
-color: "#22d3ee",
-},
-{
-id: "auctions",
-label: "Auctions",
-icon: "◆",
-color: "#c084fc",
-},
+{ id: "cycles", label: "Monthly Cycles", icon: "↻", color: "#22d3ee" },
+{ id: "auctions", label: "Auctions", icon: "◆", color: "#c084fc" },
 ],
 },
 {
 title: "Reports",
 items: [
-{
-id: "reports",
-label: "Reports",
-icon: "▤",
-color: "#818cf8",
-},
+{ id: "reports", label: "Reports", icon: "▤", color: "#818cf8" },
 ],
 },
 ];
@@ -165,48 +125,56 @@ flexShrink: 0,
                 marginBottom: "3px",
               }}
             >
+              {/* Icon */}
               <span
                 style={{
                   width: "32px",
                   height: "32px",
+                  minWidth: "32px",
                   borderRadius: "8px",
-                  display: "inline-flex",
+                  display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: isActive
+                  backgroundColor: isActive
                     ? "rgba(255,255,255,0.15)"
                     : `${item.color}18`,
                   color: isActive
                     ? "#ffffff"
                     : item.color,
                   fontSize: "16px",
+                  lineHeight: 1,
                   fontWeight: 800,
                   flexShrink: 0,
-                  transition:
-                    "all 0.15s ease",
+                  textAlign: "center",
                 }}
               >
                 {item.icon}
               </span>
 
+              {/* Label */}
               <span
                 style={{
                   flex: 1,
+                  minWidth: 0,
                   textAlign: "left",
+                  lineHeight: "20px",
                 }}
               >
                 {item.label}
               </span>
 
+              {/* Active indicator */}
               {isActive && (
                 <span
                   style={{
                     width: "5px",
                     height: "5px",
+                    minWidth: "5px",
                     borderRadius: "50%",
                     background: "#ffffff",
                     boxShadow:
                       "0 0 8px rgba(255,255,255,0.8)",
+                    flexShrink: 0,
                   }}
                 />
               )}
@@ -239,11 +207,11 @@ flexShrink: 0,
         style={{
           width: "8px",
           height: "8px",
+          minWidth: "8px",
           borderRadius: "50%",
           background: "#22c55e",
           boxShadow:
             "0 0 8px rgba(34,197,94,0.6)",
-          flexShrink: 0,
         }}
       />
 
