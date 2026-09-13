@@ -6,6 +6,8 @@ import Dashboard from "./features/dashboard/Dashboard";
 import ChitsPage from "./features/chits/ChitsPage";\
 import MembersPage from "./features/members/MembersPage";
 import CollectionsPage from "./features/collections/CollectionsPage";
+import OutstandingPage from "./features/outstanding/OutstandingPage";
+
 
 
 
@@ -32,6 +34,9 @@ function App() {
         return <MembersPage />;
       case "collections":
         return <CollectionsPage />;
+      case "outstanding":
+        return <OutstandingPage />;
+
 
 
 
