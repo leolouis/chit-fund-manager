@@ -14,22 +14,46 @@ function ChitsPage() {
 
   if (showForm) {
     return (
-      <ChitForm
-        onSaved={handleSaved}
-        onCancel={() => setShowForm(false)}
-      />
+      <div className="page-content">
+        <ChitForm
+          onSaved={handleSaved}
+          onCancel={() => setShowForm(false)}
+        />
+      </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
+    <div className="page-content">
+      {/* Page header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "20px",
+          marginBottom: "24px",
+        }}
+      >
         <div>
-          <h3 className="text-2xl font-bold text-slate-900">
+          <h3
+            style={{
+              margin: 0,
+              fontSize: "24px",
+              fontWeight: 750,
+              color: "#0f172a",
+            }}
+          >
             Chits
           </h3>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p
+            style={{
+              margin: "5px 0 0",
+              color: "#64748b",
+              fontSize: "14px",
+            }}
+          >
             Create and manage your chit groups.
           </p>
         </div>
@@ -37,13 +61,98 @@ function ChitsPage() {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700"
+          className="btn btn-primary"
         >
-          + Create Chit
+          <span
+            style={{
+              fontSize: "17px",
+              lineHeight: 1,
+            }}
+          >
+            +
+          </span>
+
+          Create Chit
         </button>
       </div>
 
-      <ChitList refreshKey={refreshKey} />
+      {/* Summary cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(3, minmax(0, 1fr))",
+          gap: "16px",
+          marginBottom: "20px",
+        }}
+      >
+        <div className="card">
+          <div className="stat-label">
+            Total Chits
+          </div>
+
+          <div className="stat-value">
+            —
+          </div>
+
+          <div className="stat-description">
+            All registered chit groups
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="stat-label">
+            Active Chits
+          </div>
+
+          <div className="stat-value">
+            —
+          </div>
+
+          <div className="stat-description">
+            Currently running groups
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="stat-label">
+            Completed
+          </div>
+
+          <div className="stat-value">
+            —
+          </div>
+
+          <div className="stat-description">
+            Successfully completed groups
+          </div>
+        </div>
+      </div>
+
+      {/* Chit list */}
+      <div className="card">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "18px",
+          }}
+        >
+          <div>
+            <h4 className="card-title">
+              Chit Groups
+            </h4>
+
+            <p className="card-subtitle">
+              Manage your registered chit groups and
+              their details.
+            </p>
+          </div>
+        </div>
+
+        <ChitList refreshKey={refreshKey} />
+      </div>
     </div>
   );
 }
