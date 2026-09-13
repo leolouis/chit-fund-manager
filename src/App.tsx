@@ -7,9 +7,7 @@ import ChitsPage from "./features/chits/ChitsPage";\
 import MembersPage from "./features/members/MembersPage";
 import CollectionsPage from "./features/collections/CollectionsPage";
 import OutstandingPage from "./features/outstanding/OutstandingPage";
-
-
-
+import CyclesPage from "./features/cycles/CyclesPage";
 
 
 const pageTitles: Record<string, string> = {
@@ -18,6 +16,7 @@ const pageTitles: Record<string, string> = {
   members: "Members",
   collections: "Collections",
   outstanding: "Outstanding",
+  cycles: "Monthly Cycles",
   auctions: "Auctions",
   reports: "Reports",
 };
@@ -37,6 +36,9 @@ function App() {
         return <CollectionsPage />;
       case "outstanding":
         return <OutstandingPage />;
+      case "cycles":
+        return <CyclesPage />;
+
 
 
 
