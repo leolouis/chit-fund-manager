@@ -9,6 +9,8 @@ import MembersPage from "./features/members/MembersPage";
 import CollectionsPage from "./features/collections/CollectionsPage";
 import OutstandingPage from "./features/outstanding/OutstandingPage";
 import CyclesPage from "./features/cycles/CyclesPage";
+import AuctionsPage from "./features/auctions/AuctionsPage";
+
 
 const pageTitles: Record<string, string> = {
   dashboard: "Dashboard",
@@ -44,6 +46,10 @@ function App() {
 
       case "cycles":
         return <CyclesPage />;
+      
+      case "auctions":
+        return <AuctionsPage />;
+
 
       default:
         return (
