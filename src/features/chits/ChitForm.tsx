@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { db } from "../../db/database";
+import { generateCycles } from "./generateCycles";
 import type { Chit } from "../../types/chit";
 
 interface ChitFormProps {
@@ -8,30 +9,27 @@ interface ChitFormProps {
   onCancel: () => void;
 }
 
-function ChitForm({ onSaved, onCancel }: ChitFormProps) {
+function ChitForm({
+  onSaved,
+  onCancel,
+}: ChitFormProps) {
   const [name, setName] = useState("");
   const [chitAmount, setChitAmount] = useState("");
-  const [monthlyAmount, setMonthlyAmount] = useState("");
-  const [memberCount, setMemberCount] = useState("");
-  const [durationMonths, setDurationMonths] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [commissionPercentage, setCommissionPercentage] =
-    useState("5");
+  const [monthlyAmount, setMonthlyAmount] =
+    useState("");
+  const [memberCount, setMemberCount] =
+    useState("");
+  const [durationMonths, setDurationMonths] =
+    useState("");
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [commission, setCommission] =
+    useState("");
   const [notes, setNotes] = useState("");
 
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  const calculateEndDate = (
-    start: string,
-    months: number,
-  ) => {
-    const date = new Date(start);
-
-    date.setMonth(date.getMonth() + months - 1);
-
-    return date.toISOString().split("T")[0];
-  };
+  const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (
     event: React.FormEvent,
@@ -45,23 +43,37 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
       return;
     }
 
-    if (!chitAmount || Number(chitAmount) <= 0) {
-      setError("Please enter the chit amount.");
+    if (
+      !chitAmount ||
+      Number(chitAmount) <= 0
+    ) {
+      setError("Please enter a valid chit amount.");
       return;
     }
 
-    if (!monthlyAmount || Number(monthlyAmount) <= 0) {
-      setError("Please enter the monthly amount.");
+    if (
+      !monthlyAmount ||
+      Number(monthlyAmount) <= 0
+    ) {
+      setError(
+        "Please enter a valid monthly contribution.",
+      );
       return;
     }
 
-    if (!memberCount || Number(memberCount) <= 0) {
+    if (
+      !memberCount ||
+      Number(memberCount) <= 0
+    ) {
       setError("Please enter the number of members.");
       return;
     }
 
-    if (!durationMonths || Number(durationMonths) <= 0) {
-      setError("Please enter the duration.");
+    if (
+      !durationMonths ||
+      Number(durationMonths) <= 0
+    ) {
+      setError("Please enter the chit duration.");
       return;
     }
 
@@ -79,9 +91,11 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
         name: name.trim(),
 
         chitAmount: Number(chitAmount),
+
         monthlyAmount: Number(monthlyAmount),
 
         memberCount: Number(memberCount),
+
         durationMonths: Number(durationMonths),
 
         startDate,
@@ -91,18 +105,24 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
           Number(durationMonths),
         ),
 
-        commissionPercentage:
-          Number(commissionPercentage) || 0,
+        commission: Number(commission) || 0,
 
         status: "active",
 
         notes: notes.trim(),
 
         createdAt: now,
+
         updatedAt: now,
       };
 
-      await db.chits.add(chit);
+      const id = await db.chits.add(chit);
+
+      /*
+       * Automatically create all monthly cycles
+       * for the newly created chit.
+       */
+      await generateCycles(Number(id));
 
       onSaved();
     } catch (err) {
@@ -127,7 +147,7 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
         </h3>
 
         <p className="mt-1 text-sm text-slate-500">
-          Enter the basic details of the chit.
+          Enter the basic details for your chit group.
         </p>
       </div>
 
@@ -138,7 +158,8 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
       )}
 
       <div className="grid gap-5 md:grid-cols-2">
-        <div>
+        {/* Chit Name */}
+        <div className="md:col-span-2">
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Chit Name
           </label>
@@ -149,11 +170,12 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
             onChange={(event) =>
               setName(event.target.value)
             }
-            placeholder="Example: Chit 2026 - A"
+            placeholder="Example: Family Chit 2026"
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
           />
         </div>
 
+        {/* Chit Amount */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Chit Amount
@@ -171,6 +193,7 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
           />
         </div>
 
+        {/* Monthly Amount */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Monthly Contribution
@@ -188,6 +211,7 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
           />
         </div>
 
+        {/* Member Count */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Number of Members
@@ -205,6 +229,7 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
           />
         </div>
 
+        {/* Duration */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Duration (Months)
@@ -222,6 +247,7 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
           />
         </div>
 
+        {/* Start Date */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Start Date
@@ -237,26 +263,30 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
           />
         </div>
 
+        {/* Commission */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            Foreman Commission (%)
+            Host Commission
           </label>
 
           <input
             type="number"
             min="0"
-            max="100"
-            step="0.01"
-            value={commissionPercentage}
+            value={commission}
             onChange={(event) =>
-              setCommissionPercentage(
-                event.target.value,
-              )
+              setCommission(event.target.value)
             }
+            placeholder="0"
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
           />
+
+          <p className="mt-1 text-xs text-slate-500">
+            Leave as 0 if you don't want to configure
+            it yet.
+          </p>
         </div>
 
+        {/* Notes */}
         <div className="md:col-span-2">
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Notes
@@ -268,12 +298,50 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
               setNotes(event.target.value)
             }
             rows={3}
-            placeholder="Optional notes..."
+            placeholder="Optional notes about this chit"
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
           />
         </div>
       </div>
 
+      {/* Summary */}
+      {monthlyAmount &&
+        memberCount &&
+        durationMonths && (
+          <div className="mt-6 rounded-lg bg-violet-50 p-4">
+            <p className="text-sm font-medium text-violet-900">
+              Chit Summary
+            </p>
+
+            <div className="mt-2 grid gap-2 text-sm text-violet-800 sm:grid-cols-3">
+              <div>
+                Monthly:{" "}
+                <strong>
+                  ₹
+                  {Number(
+                    monthlyAmount,
+                  ).toLocaleString("en-IN")}
+                </strong>
+              </div>
+
+              <div>
+                Members:{" "}
+                <strong>
+                  {memberCount}
+                </strong>
+              </div>
+
+              <div>
+                Duration:{" "}
+                <strong>
+                  {durationMonths} months
+                </strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* Actions */}
       <div className="mt-6 flex justify-end gap-3">
         <button
           type="button"
@@ -288,11 +356,26 @@ function ChitForm({ onSaved, onCancel }: ChitFormProps) {
           disabled={saving}
           className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? "Saving..." : "Save Chit"}
+          {saving ? "Creating..." : "Create Chit"}
         </button>
       </div>
     </form>
   );
+}
+
+function calculateEndDate(
+  startDate: string,
+  durationMonths: number,
+) {
+  const date = new Date(
+    `${startDate}T00:00:00`,
+  );
+
+  date.setMonth(
+    date.getMonth() + durationMonths - 1,
+  );
+
+  return date.toISOString().split("T")[0];
 }
 
 export default ChitForm;
