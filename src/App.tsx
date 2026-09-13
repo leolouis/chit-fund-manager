@@ -9,8 +9,6 @@ import MembersPage from "./features/members/MembersPage";
 import CollectionsPage from "./features/collections/CollectionsPage";
 import OutstandingPage from "./features/outstanding/OutstandingPage";
 import CyclesPage from "./features/cycles/CyclesPage";
-import AuctionsPage from "./features/auctions/AuctionsPage";
-
 
 const pageTitles: Record<string, string> = {
   dashboard: "Dashboard",
@@ -46,20 +44,16 @@ function App() {
 
       case "cycles":
         return <CyclesPage />;
-      
-      case "auctions":
-        return <AuctionsPage />;
-
 
       default:
         return (
-          <div className="rounded-xl border border-slate-200 bg-white p-8">
-            <h3 className="text-xl font-semibold text-slate-900">
+          <div className="card">
+            <h3 className="card-title">
               {pageTitles[activePage] ??
                 "Coming Soon"}
             </h3>
 
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="card-subtitle">
               This section will be built next.
             </p>
           </div>
@@ -68,13 +62,13 @@ function App() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="app-shell">
       <Sidebar
         activePage={activePage}
         onNavigate={setActivePage}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="app-main">
         <Header
           title={
             pageTitles[activePage] ??
@@ -82,7 +76,7 @@ function App() {
           }
         />
 
-        <main className="flex-1 overflow-auto p-6">
+        <main className="page-content">
           {renderPage()}
         </main>
       </div>
