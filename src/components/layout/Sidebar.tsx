@@ -3,50 +3,167 @@ interface SidebarProps {
   onNavigate: (page: string) => void;
 }
 
-const menuItems = [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "chits", label: "Chits" },
-  { id: "members", label: "Members" },
-  { id: "collections", label: "Collections" },
-  { id: "outstanding", label: "Outstanding" },
-  { id: "cycles", label: "Monthly Cycles" },
-  { id: "auctions", label: "Auctions" },
-  { id: "reports", label: "Reports" },
+const menuSections = [
+  {
+    title: "Overview",
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: "▦" },
+    ],
+  },
+  {
+    title: "Management",
+    items: [
+      { id: "chits", label: "Chits", icon: "◫" },
+      { id: "members", label: "Members", icon: "♙" },
+      { id: "collections", label: "Collections", icon: "₹" },
+      { id: "outstanding", label: "Outstanding", icon: "!" },
+    ],
+  },
+  {
+    title: "Operations",
+    items: [
+      { id: "cycles", label: "Monthly Cycles", icon: "↻" },
+      { id: "auctions", label: "Auctions", icon: "◆" },
+    ],
+  },
+  {
+    title: "Reports",
+    items: [
+      { id: "reports", label: "Reports", icon: "▤" },
+    ],
+  },
 ];
 
-function Sidebar({ activePage, onNavigate }: SidebarProps) {
+function Sidebar({
+  activePage,
+  onNavigate,
+}: SidebarProps) {
   return (
-    <aside className="w-64 border-r border-slate-200 bg-white">
-      <div className="border-b border-slate-200 p-5">
-        <h1 className="text-lg font-bold text-violet-700">
-          Chit Fund Manager
-        </h1>
+    <aside className="sidebar">
+      {/* Brand */}
+      <div className="sidebar-header">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
+          <div
+            style={{
+              width: "38px",
+              height: "38px",
+              borderRadius: "10px",
+              background: "#7c3aed",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              fontSize: "18px",
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
+            ₹
+          </div>
 
-        <p className="mt-1 text-xs text-slate-500">
-          Local & Offline
-        </p>
+          <div>
+            <h1 className="sidebar-title">
+              Chit Fund Manager
+            </h1>
+
+            <p className="sidebar-subtitle">
+              Local & Offline
+            </p>
+          </div>
+        </div>
       </div>
 
-      <nav className="p-3">
-        {menuItems.map((item) => {
-          const isActive = activePage === item.id;
-
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onNavigate(item.id)}
-              className={`mb-1 w-full rounded-lg px-4 py-3 text-left text-sm font-medium transition ${
-                isActive
-                  ? "bg-violet-100 text-violet-700"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
+      {/* Navigation */}
+      <nav className="sidebar-nav">
+        {menuSections.map((section) => (
+          <div
+            key={section.title}
+            style={{ marginBottom: "14px" }}
+          >
+            <div
+              style={{
+                padding: "0 12px 7px",
+                color: "#64748b",
+                fontSize: "10px",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
             >
-              {item.label}
-            </button>
-          );
-        })}
+              {section.title}
+            </div>
+
+            {section.items.map((item) => {
+              const isActive =
+                activePage === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() =>
+                    onNavigate(item.id)
+                  }
+                  className={`sidebar-button ${
+                    isActive ? "active" : ""
+                  }`}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      width: "24px",
+                      marginRight: "8px",
+                      justifyContent: "center",
+                      fontSize: "15px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {item.icon}
+                  </span>
+
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
+
+      {/* Bottom status */}
+      <div
+        style={{
+          marginTop: "auto",
+          padding: "16px",
+          borderTop: "1px solid #1e293b",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            color: "#94a3b8",
+            fontSize: "12px",
+          }}
+        >
+          <span
+            style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: "#22c55e",
+            }}
+          />
+
+          <span>Data stored locally</span>
+        </div>
+      </div>
     </aside>
   );
 }
