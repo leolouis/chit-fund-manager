@@ -2,22 +2,17 @@ export interface Auction {
   id?: number;
 
   chitId: number;
-
-  monthNumber: number;
+  cycleId: number;
+  memberId: number;
 
   auctionDate: string;
 
-  winnerMemberId: number;
-
   bidAmount: number;
-
+  discountAmount: number;
   prizeAmount: number;
 
-  commissionAmount: number;
-
-  dividendAmount: number;
-
-  notes?: string;
+  notes: string;
 
   createdAt: string;
+  updatedAt: string;
 }
