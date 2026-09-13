@@ -6,10 +6,24 @@ import type { Member } from "../../types/member";
 
 interface MemberListProps {
   selectedChitId: number | null;
-  onChitChange: (
-    chitId: number | null,
-  ) => void;
+  onChitChange: (chitId: number | null) => void;
   refreshKey: number;
+}
+
+function formatDate(date: string) {
+  if (!date) return "—";
+
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return date;
+  }
+
+  return parsed.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function MemberList({
@@ -17,33 +31,42 @@ function MemberList({
   onChitChange,
   refreshKey,
 }: MemberListProps) {
-  const [chits, setChits] = useState<Chit[]>(
-    [],
-  );
-
-  const [members, setMembers] = useState<
-    Member[]
-  >([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
+  const [chits, setChits] = useState<Chit[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [chitsLoading, setChitsLoading] = useState(true);
 
   useEffect(() => {
     const loadChits = async () => {
-      const results = await db.chits
-        .where("status")
-        .equals("active")
-        .toArray();
+      try {
+        setChitsLoading(true);
 
-      setChits(results);
+        const results = await db.chits
+          .where("status")
+          .equals("active")
+          .toArray();
 
-      if (
-        results.length > 0 &&
-        selectedChitId === null
-      ) {
-        onChitChange(results[0].id!);
+        setChits(results);
+
+        if (
+          results.length > 0 &&
+          selectedChitId === null
+        ) {
+          onChitChange(results[0].id!);
+        }
+
+        if (results.length === 0) {
+          onChitChange(null);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load chits:",
+          error,
+        );
+        setChits([]);
+      } finally {
+        setChitsLoading(false);
       }
     };
 
@@ -58,30 +81,39 @@ function MemberList({
         return;
       }
 
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      const results = await db.members
-        .where("chitId")
-        .equals(selectedChitId)
-        .toArray();
+        const results = await db.members
+          .where("chitId")
+          .equals(selectedChitId)
+          .toArray();
 
-      results.sort((a, b) =>
-        a.memberNumber.localeCompare(
-          b.memberNumber,
-          undefined,
-          { numeric: true },
-        ),
-      );
+        results.sort((a, b) =>
+          a.memberNumber.localeCompare(
+            b.memberNumber,
+            undefined,
+            { numeric: true },
+          ),
+        );
 
-      setMembers(results);
-      setLoading(false);
+        setMembers(results);
+      } catch (error) {
+        console.error(
+          "Failed to load members:",
+          error,
+        );
+        setMembers([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadMembers();
   }, [selectedChitId, refreshKey]);
 
-  const filteredMembers =
-    members.filter((member) => {
+  const filteredMembers = members.filter(
+    (member) => {
       const searchText =
         search.trim().toLowerCase();
 
@@ -100,230 +132,358 @@ function MemberList({
           .toLowerCase()
           .includes(searchText)
       );
-    });
+    },
+  );
 
   const activeCount = members.filter(
-    (member) =>
-      member.status === "active",
+    (member) => member.status === "active",
   ).length;
 
   return (
     <div>
       {/* Filters */}
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-5 md:grid-cols-2">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Chit
-            </label>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "minmax(220px, 1fr) minmax(260px, 1fr)",
+          gap: "16px",
+          marginBottom: "20px",
+        }}
+      >
+        <div>
+          <label className="form-label">
+            Chit Group
+          </label>
 
-            <select
-              value={
-                selectedChitId ??
-                ""
-              }
-              onChange={(event) => {
-                const value =
-                  event.target.value;
+          <select
+            value={selectedChitId ?? ""}
+            onChange={(event) => {
+              const value = event.target.value;
 
-                onChitChange(
-                  value
-                    ? Number(value)
-                    : null,
-                );
+              onChitChange(
+                value ? Number(value) : null,
+              );
 
-                setSearch("");
-              }}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
-            >
-              <option value="">
-                Select a chit
+              setSearch("");
+            }}
+            disabled={chitsLoading}
+            className="form-input"
+          >
+            <option value="">
+              {chitsLoading
+                ? "Loading chits..."
+                : "Select a chit"}
+            </option>
+
+            {chits.map((chit) => (
+              <option
+                key={chit.id}
+                value={chit.id}
+              >
+                {chit.name}
               </option>
+            ))}
+          </select>
+        </div>
 
-              {chits.map((chit) => (
-                <option
-                  key={chit.id}
-                  value={chit.id}
-                >
-                  {chit.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="form-label">
+            Search Members
+          </label>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Search Member
-            </label>
-
+          <div style={{ position: "relative" }}>
             <input
               type="search"
               value={search}
               onChange={(event) =>
-                setSearch(
-                  event.target.value,
-                )
+                setSearch(event.target.value)
               }
-              placeholder="Name, number or phone"
-              disabled={
-                selectedChitId === null
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:bg-slate-100"
+              placeholder="Search name, number or phone..."
+              disabled={selectedChitId === null}
+              className="form-input"
             />
+
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  border: 0,
+                  background: "transparent",
+                  color: "#94a3b8",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Summary */}
       {selectedChitId !== null && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <p className="text-sm text-slate-500">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(3, minmax(0, 1fr))",
+            gap: "14px",
+            marginBottom: "20px",
+          }}
+        >
+          <div className="stat-card">
+            <div className="stat-label">
               Total Members
-            </p>
+            </div>
 
-            <p className="mt-1 text-2xl font-bold text-slate-900">
+            <div className="stat-value">
               {members.length}
-            </p>
+            </div>
+
+            <div className="stat-description">
+              Registered in this chit
+            </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <p className="text-sm text-slate-500">
-              Active
-            </p>
+          <div className="stat-card">
+            <div className="stat-label">
+              Active Members
+            </div>
 
-            <p className="mt-1 text-2xl font-bold text-emerald-600">
+            <div
+              className="stat-value"
+              style={{ color: "#059669" }}
+            >
               {activeCount}
-            </p>
+            </div>
+
+            <div className="stat-description">
+              Currently participating
+            </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <p className="text-sm text-slate-500">
-              Showing
-            </p>
+          <div className="stat-card">
+            <div className="stat-label">
+              Search Results
+            </div>
 
-            <p className="mt-1 text-2xl font-bold text-violet-600">
+            <div
+              className="stat-value"
+              style={{ color: "#7c3aed" }}
+            >
               {filteredMembers.length}
-            </p>
+            </div>
+
+            <div className="stat-description">
+              Members currently shown
+            </div>
           </div>
         </div>
       )}
 
-      {/* Members */}
-      {selectedChitId === null ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <h3 className="font-semibold text-slate-900">
-            Select a chit
-          </h3>
+      {/* No active chits */}
+      {chits.length === 0 &&
+      !chitsLoading ? (
+        <div className="empty-state">
+          <div
+            style={{
+              width: "52px",
+              height: "52px",
+              margin: "0 auto 14px",
+              borderRadius: "12px",
+              background: "#ede9fe",
+              color: "#7c3aed",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "22px",
+              fontWeight: 700,
+            }}
+          >
+            ♙
+          </div>
 
-          <p className="mt-2 text-sm text-slate-500">
-            Select a chit above to view its
+          <div className="empty-state-title">
+            No active chits
+          </div>
+
+          <div className="empty-state-text">
+            Create an active chit before adding
             members.
-          </p>
+          </div>
+        </div>
+      ) : selectedChitId === null ? (
+        <div className="empty-state">
+          <div className="empty-state-title">
+            Select a chit
+          </div>
+
+          <div className="empty-state-text">
+            Select a chit group above to view its
+            members.
+          </div>
         </div>
       ) : loading ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
-          <p className="text-sm text-slate-500">
+        <div className="empty-state">
+          <div className="empty-state-title">
             Loading members...
-          </p>
+          </div>
+
+          <div className="empty-state-text">
+            Loading your local member records.
+          </div>
         </div>
       ) : filteredMembers.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-          <h3 className="font-semibold text-slate-900">
+        <div className="empty-state">
+          <div
+            style={{
+              width: "52px",
+              height: "52px",
+              margin: "0 auto 14px",
+              borderRadius: "12px",
+              background: "#f1f5f9",
+              color: "#64748b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "22px",
+              fontWeight: 700,
+            }}
+          >
+            {members.length === 0 ? "+" : "?"}
+          </div>
+
+          <div className="empty-state-title">
             {members.length === 0
               ? "No members yet"
               : "No members found"}
-          </h3>
+          </div>
 
-          <p className="mt-2 text-sm text-slate-500">
+          <div className="empty-state-text">
             {members.length === 0
-              ? "Use the Add Member button below to add the first member."
-              : "Try a different search."}
-          </p>
+              ? "Use Add Member to register the first member for this chit."
+              : "Try a different name, member number or phone number."}
+          </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  <th className="px-5 py-3 font-semibold text-slate-600">
-                    #
-                  </th>
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Phone</th>
+                <th>Joining Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
 
-                  <th className="px-5 py-3 font-semibold text-slate-600">
-                    Member
-                  </th>
+            <tbody>
+              {filteredMembers.map(
+                (member) => (
+                  <tr key={member.id}>
+                    <td>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "11px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "38px",
+                            height: "38px",
+                            borderRadius: "50%",
+                            background: "#dbeafe",
+                            color: "#2563eb",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 700,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {member.name
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
 
-                  <th className="px-5 py-3 font-semibold text-slate-600">
-                    Phone
-                  </th>
+                        <div>
+                          <div
+                            style={{
+                              fontWeight: 650,
+                              color: "#0f172a",
+                            }}
+                          >
+                            {member.name}
+                          </div>
 
-                  <th className="px-5 py-3 font-semibold text-slate-600">
-                    Joining Date
-                  </th>
+                          <div
+                            style={{
+                              marginTop: "2px",
+                              color: "#64748b",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Member #
+                            {member.memberNumber}
+                          </div>
 
-                  <th className="px-5 py-3 font-semibold text-slate-600">
-                    Status
-                  </th>
-                </tr>
-              </thead>
+                          {member.address && (
+                            <div
+                              style={{
+                                marginTop: "3px",
+                                maxWidth: "300px",
+                                overflow: "hidden",
+                                textOverflow:
+                                  "ellipsis",
+                                whiteSpace:
+                                  "nowrap",
+                                color: "#94a3b8",
+                                fontSize: "11px",
+                              }}
+                            >
+                              {member.address}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
 
-              <tbody className="divide-y divide-slate-100">
-                {filteredMembers.map(
-                  (member) => (
-                    <tr
-                      key={member.id}
-                      className="hover:bg-slate-50"
-                    >
-                      <td className="px-5 py-4 font-medium text-slate-700">
-                        {
-                          member.memberNumber
-                        }
-                      </td>
+                    <td>
+                      {member.phone || "—"}
+                    </td>
 
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-slate-900">
-                          {member.name}
-                        </p>
+                    <td>
+                      {formatDate(
+                        member.joiningDate,
+                      )}
+                    </td>
 
-                        {member.address && (
-                          <p className="mt-1 max-w-xs truncate text-xs text-slate-400">
-                            {
-                              member.address
-                            }
-                          </p>
-                        )}
-                      </td>
-
-                      <td className="px-5 py-4 text-slate-600">
-                        {member.phone ||
-                          "—"}
-                      </td>
-
-                      <td className="px-5 py-4 text-slate-600">
-                        {member.joiningDate ||
-                          "—"}
-                      </td>
-
-                      <td className="px-5 py-4">
-                        {member.status ===
-                        "active" ? (
-                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                            {member.status}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
+                    <td>
+                      {member.status ===
+                      "active" ? (
+                        <span className="badge badge-success">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="badge badge-neutral">
+                          {member.status}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
