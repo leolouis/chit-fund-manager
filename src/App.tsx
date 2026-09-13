@@ -3,7 +3,9 @@ import { useState } from "react";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import Dashboard from "./features/dashboard/Dashboard";
-import ChitsPage from "./features/chits/ChitsPage";
+import ChitsPage from "./features/chits/ChitsPage";\
+import MembersPage from "./features/members/MembersPage";
+
 
 
 const pageTitles: Record<string, string> = {
@@ -24,6 +26,9 @@ function App() {
         return <Dashboard />;
       case "chits":
         return <ChitsPage />;
+      case "members":
+        return <MembersPage />;
+
 
 
       default:
