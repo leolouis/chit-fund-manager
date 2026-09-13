@@ -8,6 +8,7 @@ const menuItems = [
   { id: "chits", label: "Chits" },
   { id: "members", label: "Members" },
   { id: "collections", label: "Collections" },
+  { id: "outstanding", label: "Outstanding" },
   { id: "auctions", label: "Auctions" },
   { id: "reports", label: "Reports" },
 ];
