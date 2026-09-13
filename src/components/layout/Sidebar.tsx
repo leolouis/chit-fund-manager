@@ -7,29 +7,69 @@ const menuSections = [
 {
 title: "Overview",
 items: [
-{ id: "dashboard", label: "Dashboard", icon: "▦" },
+{
+id: "dashboard",
+label: "Dashboard",
+icon: "▦",
+color: "#a78bfa",
+},
 ],
 },
 {
 title: "Management",
 items: [
-{ id: "chits", label: "Chits", icon: "◫" },
-{ id: "members", label: "Members", icon: "♙" },
-{ id: "collections", label: "Collections", icon: "₹" },
-{ id: "outstanding", label: "Outstanding", icon: "!" },
+{
+id: "chits",
+label: "Chits",
+icon: "◫",
+color: "#60a5fa",
+},
+{
+id: "members",
+label: "Members",
+icon: "♙",
+color: "#34d399",
+},
+{
+id: "collections",
+label: "Collections",
+icon: "₹",
+color: "#fbbf24",
+},
+{
+id: "outstanding",
+label: "Outstanding",
+icon: "!",
+color: "#fb7185",
+},
 ],
 },
 {
 title: "Operations",
 items: [
-{ id: "cycles", label: "Monthly Cycles", icon: "↻" },
-{ id: "auctions", label: "Auctions", icon: "◆" },
+{
+id: "cycles",
+label: "Monthly Cycles",
+icon: "↻",
+color: "#22d3ee",
+},
+{
+id: "auctions",
+label: "Auctions",
+icon: "◆",
+color: "#c084fc",
+},
 ],
 },
 {
 title: "Reports",
 items: [
-{ id: "reports", label: "Reports", icon: "▤" },
+{
+id: "reports",
+label: "Reports",
+icon: "▤",
+color: "#818cf8",
+},
 ],
 },
 ];
@@ -51,16 +91,19 @@ gap: "12px",
 >
 <div
 style={{
-width: "38px",
-height: "38px",
-borderRadius: "10px",
-background: "#7c3aed",
+width: "40px",
+height: "40px",
+borderRadius: "11px",
+background:
+"linear-gradient(135deg, #8b5cf6, #6d28d9)",
 display: "flex",
 alignItems: "center",
 justifyContent: "center",
 color: "#ffffff",
-fontSize: "18px",
-fontWeight: 700,
+fontSize: "19px",
+fontWeight: 800,
+boxShadow:
+"0 6px 18px rgba(124, 58, 237, 0.35)",
 flexShrink: 0,
 }}
 >
@@ -85,16 +128,16 @@ flexShrink: 0,
       <div
         key={section.title}
         style={{
-          marginBottom: "14px",
+          marginBottom: "18px",
         }}
       >
         <div
           style={{
-            padding: "0 12px 7px",
+            padding: "0 12px 8px",
             color: "#64748b",
             fontSize: "10px",
             fontWeight: 700,
-            letterSpacing: "0.08em",
+            letterSpacing: "0.1em",
             textTransform: "uppercase",
           }}
         >
@@ -115,22 +158,58 @@ flexShrink: 0,
               className={`sidebar-button${
                 isActive ? " active" : ""
               }`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                marginBottom: "3px",
+              }}
             >
               <span
                 style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
                   display: "inline-flex",
-                  width: "24px",
-                  marginRight: "8px",
-                  justifyContent: "center",
                   alignItems: "center",
-                  fontSize: "15px",
-                  fontWeight: 700,
+                  justifyContent: "center",
+                  background: isActive
+                    ? "rgba(255,255,255,0.15)"
+                    : `${item.color}18`,
+                  color: isActive
+                    ? "#ffffff"
+                    : item.color,
+                  fontSize: "16px",
+                  fontWeight: 800,
+                  flexShrink: 0,
+                  transition:
+                    "all 0.15s ease",
                 }}
               >
                 {item.icon}
               </span>
 
-              {item.label}
+              <span
+                style={{
+                  flex: 1,
+                  textAlign: "left",
+                }}
+              >
+                {item.label}
+              </span>
+
+              {isActive && (
+                <span
+                  style={{
+                    width: "5px",
+                    height: "5px",
+                    borderRadius: "50%",
+                    background: "#ffffff",
+                    boxShadow:
+                      "0 0 8px rgba(255,255,255,0.8)",
+                  }}
+                />
+              )}
             </button>
           );
         })}
@@ -143,14 +222,15 @@ flexShrink: 0,
     style={{
       marginTop: "auto",
       padding: "16px",
-      borderTop: "1px solid #1e293b",
+      borderTop:
+        "1px solid rgba(148, 163, 184, 0.12)",
     }}
   >
     <div
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "8px",
+        gap: "9px",
         color: "#94a3b8",
         fontSize: "12px",
       }}
@@ -161,6 +241,8 @@ flexShrink: 0,
           height: "8px",
           borderRadius: "50%",
           background: "#22c55e",
+          boxShadow:
+            "0 0 8px rgba(34,197,94,0.6)",
           flexShrink: 0,
         }}
       />
