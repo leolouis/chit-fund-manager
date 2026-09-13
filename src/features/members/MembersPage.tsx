@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import type { Chit } from "../../types/chit";
 import MemberForm from "./MemberForm";
 import MemberList from "./MemberList";
 
